@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Pliego — prueba</title>
+<link rel="stylesheet" href="pliego.css">
+</head>
+<body>
+<div class="pi">
+
+  <!-- Stage: one sheet at a time, click anywhere to advance -->
+  <main class="stage" id="stage" role="region" aria-roledescription="carousel" aria-label="Fotografías"></main>
+
+  <!-- Contact sheet of the current series -->
+  <section class="contact" id="contact" aria-label="Hoja de contactos" hidden>
+    <div class="contact__grid" id="grid"></div>
+  </section>
+
+  <!-- Text page: pure Ankaa -->
+  <section class="info" id="info" aria-label="Info" hidden>
+    <div class="cover">
+      <div class="wrap cover__meta label">
+        <span>(Info)</span>
+        <span>Fotografía</span>
+        <span>Lugar · 2026</span>
+      </div>
+      <div class="wrap cover__bottom">
+        <h1 class="title title--xl">Nombre Apellido</h1>
+        <p class="text">Texto de ejemplo. Aquí va la presentación en dos o tres frases cortas: qué fotografías, dónde y para quién.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="wrap split">
+        <div class="chapter"><p class="chapter__num">05</p><p class="label">(Encargos)</p></div>
+        <div class="stack stack--l">
+          <h2 class="title title--l">Tres formas de trabajar <em>juntos</em>.</h2>
+          <ol class="rows">
+            <li class="rows__row"><span class="label">01</span><h3 class="title title--s">Retrato</h3><p class="text--s">Texto de ejemplo. Una frase que explica el encargo.</p></li>
+            <li class="rows__row"><span class="label">02</span><h3 class="title title--s">Editorial</h3><p class="text--s">Texto de ejemplo. Una frase que explica el encargo.</p></li>
+            <li class="rows__row"><span class="label">03</span><h3 class="title title--s">Obra impresa</h3><p class="text--s">Texto de ejemplo. Una frase que explica el encargo.</p></li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <div class="takeover">
+      <div class="takeover__row label"><span>(Contacto)</span><span>CA · ES · EN</span></div>
+      <a class="takeover__title figure figure--xl" href="#contacto"><span>¿Hablamos?</span></a>
+      <p class="label">Cuéntame el encargo. Respondo en dos días.</p>
+    </div>
+
+    <div class="section" id="contacto">
+      <div class="wrap block">
+        <p class="label">(Escribe)</p>
+        <div class="stack stack--l">
+          <div class="fields">
+            <label class="field"><span class="label">Nombre</span><input name="nombre" autocomplete="off"></label>
+            <label class="field"><span class="label">Correo</span><input name="correo" autocomplete="off"></label>
+            <label class="field field--wide"><span class="label">Qué necesitas</span><textarea rows="2"></textarea></label>
+          </div>
+          <button class="btn" type="button">Enviar</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="foot">
+      <div class="wrap">
+        <p class="title title--l">Nombre Apellido</p>
+        <div class="foot__bottom label"><span>© 2026</span><span>Estilo Pliego · prueba</span></div>
+      </div>
+    </footer>
+  </section>
+
+  <div class="zoom" id="zoom" aria-hidden="true"></div>
+
+  <button class="counter label" id="counter" type="button" aria-live="polite" title="Ver la hoja de contactos" hidden></button>
+  <p class="caption label" id="caption" hidden></p>
+
+  <!-- Demo controls: not part of the style -->
+  <aside class="lab label" id="lab" aria-label="Controles de prueba">
+    <button type="button" id="lab-toggle">(Prueba)</button>
+    <button type="button" data-fx="">Serie</button>
+    <button type="button" data-fx="push">Empuje</button>
+    <button type="button" data-fx="split">Partido</button>
+    <button type="button" data-fx="cut">Corte</button>
+    <button type="button" data-fx="blinds">Persiana</button>
+    <span class="lab__gap"></span>
+    <p id="lab-count"></p>
+    <button type="button" id="lab-add">+ Fotos</button>
+    <button type="button" id="lab-hide">Ocultar</button>
+    <input type="file" id="lab-file" accept="image/*" multiple hidden>
+  </aside>
+
+  <div class="curtain" id="curtain" aria-hidden="true" hidden>
+    <p class="figure figure--xl" id="curtain-n"></p>
+    <p class="label" id="curtain-l"></p>
+  </div>
+
+  <nav class="menu" id="menu" aria-label="Secciones"></nav>
+
+  <div class="index" id="index" role="dialog" aria-label="Índice" hidden>
+    <div class="index__top">
+      <p class="title title--l">Nombre Apellido</p>
+      <button class="label" type="button" id="index-close">(Cerrar)</button>
+    </div>
+    <div class="index__rows" id="index-rows"></div>
+  </div>
+
+  <div class="cursor label" id="cursor" aria-hidden="true" hidden><span></span></div>
+
+</div>
+<script src="pliego.js"></script>
+</body>
+</html>
