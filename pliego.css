@@ -81,16 +81,15 @@ html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: non
 }
 .sheet[data-mode='fit'] .media { --w: var(--fw); --h: var(--fh); }
 
-@media (orientation: portrait) {
-  .sheet__in { flex-direction: column; }
-  .panel + .panel { margin-left: 0; margin-top: -1px; }
-  /* On a phone: landscape photos are shown whole, lone portraits fill the screen */
-  .sheet[data-mode='full'] .media[data-o='H'] { --w: var(--fw); --h: var(--fh); }
-  .sheet[data-mode='fit'] .media[data-o='V'] { --w: var(--cw); --h: var(--ch); }
-}
+/* Tall screens: full-width photos stacked until the screen is full. Each keeps its share of the height. */
+.sheet[data-mode='stack'] .sheet__in { flex-direction: column; justify-content: center; }
+.sheet[data-mode='stack'] .panel { flex: var(--g) 1 0px; }
+.sheet[data-mode='stack'] .panel + .panel { margin: -1px 0 0; }
+/* A stack too short to fill the screen is shown whole, centred on the stage colour */
+.sheet[data-mode='stack'][data-fill='contain'] .panel { flex: 0 0 calc(100vw / var(--r)); }
 
 /* Opener sheet: no photograph */
-.opener { flex-flow: row wrap; align-items: flex-end; align-content: flex-end; gap: var(--s2) var(--s4); padding: var(--edge); padding-bottom: calc(var(--edge) + 3.5rem); }
+.opener { flex-flow: row wrap; align-items: flex-end; align-content: flex-end; gap: var(--s2) var(--s4); padding: var(--edge); padding-bottom: calc(max(var(--edge), env(safe-area-inset-bottom)) + 3.5rem); }
 .opener__t { display: grid; gap: var(--s2); padding-bottom: 0.6em; }
 
 /* Image slot: stands in for a photo until one is dropped in */
@@ -105,9 +104,11 @@ html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: non
 .ph__c { position: relative; display: grid; justify-items: center; gap: 2cqmin; padding: 4cqmin 6cqmin; background: var(--ph-bg); }
 .ph__n { font-family: var(--display); font-weight: 400; font-size: 26cqmin; line-height: 0.9; letter-spacing: -0.03em; }
 @container (max-height: 320px) { .ph__l { display: none; } }
+/* Shown whole on the stage colour, an empty slot needs an edge to be seen */
+.sheet[data-mode='fit'] .ph, .sheet[data-fill='contain'] .ph { outline: 1px solid var(--ph-fg); outline-offset: -1px; }
 
 /* ---------- The only things that sit on a photo ---------- */
-.menu { position: fixed; z-index: 60; left: var(--edge); top: var(--edge); display: grid; justify-items: start; }
+.menu { position: fixed; z-index: 60; left: max(var(--edge), env(safe-area-inset-left)); top: max(var(--edge), env(safe-area-inset-top)); display: grid; justify-items: start; }
 .menu a { display: flex; align-items: baseline; gap: 0.75rem; min-width: 44px; min-height: 44px; }
 .menu__n { font-family: var(--display); font-weight: 400; font-size: clamp(1.75rem, 1.2rem + 1.4vw, 2.5rem); line-height: 1.15; letter-spacing: -0.03em; border-bottom: 2px solid transparent; }
 .menu a.is-current .menu__n { border-bottom-color: currentColor; }
@@ -115,9 +116,9 @@ html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: non
 @media (hover: hover) { .menu a:hover .menu__l { visibility: visible; } }
 .menu a:focus-visible .menu__l { visibility: visible; }
 
-.counter, .caption { position: fixed; z-index: 40; bottom: var(--edge); }
-.pi .counter { left: var(--edge); margin: -0.9rem; padding: 0.9rem; }
-.caption { right: var(--edge); max-width: min(48ch, 60vw); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: right; }
+.counter, .caption { position: fixed; z-index: 40; bottom: max(var(--edge), env(safe-area-inset-bottom)); }
+.pi .counter { left: max(var(--edge), env(safe-area-inset-left)); margin: -0.9rem; padding: 0.9rem; }
+.caption { right: max(var(--edge), env(safe-area-inset-right)); max-width: min(48ch, 60vw); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: right; }
 
 .cursor { position: fixed; left: 0; top: 0; z-index: 80; pointer-events: none; }
 .cursor span { display: block; white-space: nowrap; transform: translate(-50%, -50%); }
@@ -149,7 +150,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: non
 .pi .index__row { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr) auto; align-items: baseline; gap: var(--s2); width: 100%; padding-block: var(--s3); border-bottom: var(--line); text-align: left; }
 
 /* ---------- Demo controls (not part of the style) ---------- */
-.lab { position: fixed; z-index: 40; right: var(--edge); top: var(--edge); display: grid; justify-items: end; gap: 0.45rem; text-align: right; }
+.lab { position: fixed; z-index: 40; right: max(var(--edge), env(safe-area-inset-right)); top: max(var(--edge), env(safe-area-inset-top)); display: grid; justify-items: end; gap: 0.45rem; text-align: right; }
 .pi .lab button { padding-bottom: 2px; border-bottom: 2px solid transparent; }
 .pi .lab button.is-on { border-bottom-color: currentColor; }
 .lab__gap { height: 0.5rem; }
@@ -173,7 +174,8 @@ html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: non
 .rows__row { display: grid; grid-template-columns: 4rem minmax(0, 1fr) minmax(0, 1.6fr); align-items: baseline; gap: var(--s2) var(--s3); padding-block: var(--s3); border-bottom: var(--line); }
 .takeover { display: grid; gap: clamp(2rem, 1rem + 3vw, 4rem); padding: var(--s3) var(--s3) var(--s5); background: var(--accent); color: var(--ink); text-align: center; }
 .takeover__row { display: flex; justify-content: space-between; gap: var(--s2); }
-.takeover__title { display: grid; transition: color 0.4s var(--ease); }
+.takeover > * { min-width: 0; }
+.pi .takeover__title { display: grid; font-size: min(13vw, 9rem); transition: color 0.4s var(--ease); }
 a.takeover__title:hover { color: var(--paper); }
 .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4) var(--s3); width: 100%; }
 .field { display: grid; gap: var(--s1); }
@@ -195,6 +197,20 @@ a.takeover__title:hover { color: var(--paper); }
   .fields { grid-template-columns: 1fr; }
   .takeover__row { flex-direction: column; align-items: center; }
   .caption { max-width: 55vw; }
+
+  /* Text page on a phone: the numbers lie down into a header bar, the text gets the full width */
+  .info { --bar: calc(4rem + env(safe-area-inset-top)); }
+  .info::before { content: ''; position: sticky; top: 0; z-index: 2; display: block; height: var(--bar); background: var(--paper); border-bottom: var(--line); }
+  body[data-view='info'] .menu { top: 0; left: 0; display: flex; align-items: center; gap: 0.5rem; height: calc(4rem + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top); padding-left: max(var(--gutter), env(safe-area-inset-left)); }
+  body[data-view='info'] .menu a { align-items: center; }
+
+  /* Small screens: only the current number stays on the photo, with its name. Tapping it opens the index. */
+  .menu a:not(.is-current) { display: none; }
+  .menu a.is-current .menu__l { visibility: visible; }
+  .wrap { padding-left: var(--gutter); }
+  .cover { padding-top: var(--s3); }
+  .cover__meta { grid-template-columns: 1fr 1fr; }
+  .cover__meta > :last-child { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

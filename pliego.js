@@ -30,6 +30,7 @@
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const portrait = matchMedia('(orientation: portrait)');
   const touch = matchMedia('(hover: none)');
+  const narrow = matchMedia('(max-width: 720px)');
 
   const stage = $('#stage'), contact = $('#contact'), grid = $('#grid'), info = $('#info');
   const menu = $('#menu'), counter = $('#counter'), caption = $('#caption'), lab = $('#lab');
@@ -39,7 +40,8 @@
   const slots = [];
   SECTIONS.forEach((sec, si) => {
     if (sec.page) return;
-    sec.list = sec.opener ? [{ mode: 'opener' }] : [];
+    sec.slots = [];
+    sec.wide = sec.opener ? [{ mode: 'opener' }] : [];
     for (const code of sec.sheets) {
       const fit = code[0] === 'f';
       const letters = [...(fit ? code.slice(1) : code)];
@@ -48,13 +50,15 @@
         const id = slots.length + 1;
         // Neighbouring slots alternate paper / ink so the zero-gap joins stay visible while empty
         const phTone = fit ? (sec.stage === 'ink' ? 'light' : 'dark') : (id % 2 ? 'light' : 'dark');
-        const slot = { id, o, r: o === 'H' ? 3 / 2 : 2 / 3, sec: si, sheet: sec.list.length, phTone, photo: null };
+        const slot = { id, o, r: o === 'H' ? 3 / 2 : 2 / 3, sec: si, phTone, photo: null };
         slots.push(slot);
+        sec.slots.push(slot);
         sheet.slots.push(slot);
       }
-      sec.list.push(sheet);
+      sec.wide.push(sheet);
     }
-    sec.count = sec.list.reduce((n, sh) => n + (sh.slots ? sh.slots.length : 0), 0);
+    sec.count = sec.slots.length;
+    sec.list = sec.wide;
   });
 
   /* ---------- State ---------- */
@@ -68,6 +72,40 @@
   let ignoreClickUntil = 0;
   const photos = [];
   const sheetCache = new Map();
+
+  /* ---------- Sheets per screen shape ---------- */
+  const ratioOf = slot => (slot.photo ? slot.photo.w / slot.photo.h : slot.r);
+  const sheetOf = slot => Math.max(0, SECTIONS[slot.sec].list.findIndex(sh => sh.slots && sh.slots.includes(slot)));
+  let shape = '', shapeRoom = 0;
+
+  // Wide screens show the authored sheets (photos side by side). Tall screens re-flow each series:
+  // full-width photos are stacked, in order, until the screen is full.
+  function buildLists() {
+    const now = SECTIONS[s].list && SECTIONS[s].list[i];
+    const anchor = now && now.slots ? now.slots[0] : null;
+    const tall = portrait.matches, room = innerHeight / innerWidth;
+    shape = tall ? 'tall' : 'wide';
+    shapeRoom = room;
+    for (const sec of SECTIONS) {
+      if (sec.page) continue;
+      if (!tall) { sec.list = sec.wide; continue; }
+      sec.list = sec.opener ? [{ mode: 'opener' }] : [];
+      let sheet = null, sum = 0;
+      // A stack that nearly fills the screen is stretched to fill it; a short one sits whole on the stage colour
+      const close = () => { if (sheet) sheet.fill = sum >= room * 0.65 ? 'cover' : 'contain'; };
+      for (const slot of sec.slots) {
+        const h = 1 / ratioOf(slot);
+        if (sheet && sum + h <= room * 1.3) { sheet.slots.push(slot); sum += h; continue; }
+        close();
+        sheet = { mode: 'stack', slots: [slot] };
+        sum = h;
+        sec.list.push(sheet);
+      }
+      close();
+    }
+    sheetCache.clear();
+    if (anchor) i = sheetOf(anchor);
+  }
 
   /* ---------- Photos: loading, luminance, slot assignment ---------- */
   const G = 16;
@@ -134,8 +172,8 @@
       const slot = slots.find(x => !x.photo && x.o === o);
       if (slot) slot.photo = p;
     }
-    sheetCache.clear();
     contactFor = -1;
+    buildLists();
   }
 
   async function addPhotos(entries) {
@@ -177,6 +215,7 @@
     const sec = SECTIONS[si], sh = sec.list[idx];
     const sheet = el('div', 'sheet');
     sheet.dataset.mode = sh.mode;
+    if (sh.fill) sheet.dataset.fill = sh.fill;
     sheet.dataset.stage = sec.stage;
     const inner = el('div', 'sheet__in');
     if (sh.mode === 'opener') {
@@ -185,6 +224,8 @@
     } else {
       for (const slot of sh.slots) {
         const panel = el('div', 'panel');
+        panel.style.setProperty('--r', ratioOf(slot));
+        panel.style.setProperty('--g', 1 / ratioOf(slot));
         panel.append(buildMedia(slot));
         inner.append(panel);
       }
@@ -288,6 +329,7 @@
   /* ---------- Rendering the resting state ---------- */
   function renderPage() {
     const sec = SECTIONS[s];
+    document.body.dataset.view = view;
     stage.hidden = view !== 'stage';
     contact.hidden = view !== 'contact';
     info.hidden = view !== 'info';
@@ -566,7 +608,7 @@
   async function zoomIn(slot) {
     snap();
     const from = $(`.thumb[data-slot="${slot.id}"]`, grid).getBoundingClientRect();
-    i = slot.sheet; view = 'stage';
+    i = sheetOf(slot); view = 'stage';
     pushURL();
     if (reduced.matches) return renderHard();
 
@@ -586,7 +628,7 @@
     const zoomer = makeZoomer(media, box);
     me.extras.push(zoomer);
     anim(me, zoomer, { transform: [toThumb(box, from), AT_REST], clipPath: [NO_CLIP, cropClip(box, panel)] }, { duration: 600 });
-    if (inc.dataset.mode === 'spread' || inc.dataset.mode === 'triptych') {
+    if (inc.querySelectorAll('.panel').length > 1) {
       // The other photos of the sheet arrive behind it
       media.style.visibility = 'hidden';
       inc.style.visibility = '';
@@ -722,7 +764,7 @@
       a.dataset.tone = 'light';
       a.addEventListener('click', e => {
         e.preventDefault();
-        if (touch.matches) openIndex(); else goSection(k);
+        if (touch.matches || narrow.matches) openIndex(); else goSection(k);
       });
       menu.append(a);
 
@@ -822,6 +864,10 @@
   addEventListener('popstate', () => { stopTransition(); readURL(); renderHard(); });
   addEventListener('resize', () => {
     snap();
+    const tall = portrait.matches, room = innerHeight / innerWidth;
+    // Phone toolbars sliding in and out must not re-flow the series; a resized desktop window may
+    const reflow = (tall ? 'tall' : 'wide') !== shape || (tall && !touch.matches && Math.abs(room - shapeRoom) / shapeRoom > 0.05);
+    if (reflow) { buildLists(); renderHard(); return; }
     if (view === 'contact') layoutContact();
     updateChrome();
   });
@@ -829,12 +875,10 @@
   /* ---------- Start ---------- */
   (async () => {
     buildMenu();
-    readURL();
     const found = await discover();
-    if (found.length) {
-      photos.push(...(await Promise.all(found.map(loadPhoto))).filter(Boolean));
-      assign();
-    }
+    photos.push(...(await Promise.all(found.map(loadPhoto))).filter(Boolean));
+    assign();
+    readURL();
     renderHard();
     history.replaceState(null, '', hashNow());
     rise();
