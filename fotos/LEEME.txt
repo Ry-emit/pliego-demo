@@ -4,3 +4,6 @@ Mete aqui tus fotos (jpg, png, webp, avif) y recarga la pagina.
 - Las verticales rellenan los huecos verticales, por orden de nombre.
 - Si quieres una foto en un hueco concreto, llamala con el numero del hueco: 07.jpg
 - Hay 40 huecos. Lo que sobre no se usa.
+
+El archivo fotos.json se escribe solo al abrir la web con "Abrir Pliego.command".
+Es la lista de fotos que usa la web cuando esta publicada en internet. No lo borres.

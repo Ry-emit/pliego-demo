@@ -145,18 +145,26 @@
     });
   }
 
-  // Photos in ./fotos/ are found through the server's folder listing
+  // Photos in ./fotos/ are found through the local server's folder listing. On static hosting
+  // there is no listing, so fotos/fotos.json (written by servir.py) is read instead.
   async function discover() {
+    const usable = h => IMAGE_FILE.test(h) && !h.startsWith('.') && !h.includes('/');
+    const entries = list => list.filter(usable)
+      .map(h => ({ url: 'fotos/' + h, name: decodeURIComponent(h) }))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
     try {
       const res = await fetch('fotos/');
-      if (!res.ok) return [];
-      const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
-      return $$('a', doc)
-        .map(a => a.getAttribute('href') || '')
-        .filter(h => IMAGE_FILE.test(h) && !h.startsWith('.') && !h.includes('/'))
-        .map(h => ({ url: 'fotos/' + h, name: decodeURIComponent(h) }))
-        .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-    } catch { return []; }
+      if (res.ok) {
+        const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+        const found = entries($$('a', doc).map(a => a.getAttribute('href') || ''));
+        if (found.length) return found;
+      }
+    } catch { /* no listing here */ }
+    try {
+      const res = await fetch('fotos/fotos.json');
+      if (res.ok) return entries((await res.json()).map(encodeURIComponent));
+    } catch { /* no list either */ }
+    return [];
   }
 
   // A file called 07.jpg goes to slot 07; the rest fill free slots of their own orientation, in order
